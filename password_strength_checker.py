@@ -147,6 +147,104 @@ class PasswordStrength:
         return "Suggested improvements:\n\n" + "\n".join(f"- {s}" for s in suggestions)
 
 # pylint: disable=R0902
+class PasswordStrengthGUI:
+    """GUI class for Password Strength Checker."""
+
+    def __init__(self, master):
+        self.master = master
+        master.title("Password Strength Checker")
+
+        self.password_strength = PasswordStrength()
+
+        self.label = tk.Label(master, text="Enter password:")
+        self.label.pack()
+
+        self.password_entry = tk.Entry(master, show="*")
+        self.password_entry.pack()
+        self.password_entry.bind('<Return>', lambda event: self.check_password())
+
+        self.check_button = tk.Button(master, text="Check Strength", command=self.check_password)
+        self.check_button.pack()
+        self.result_label = tk.Label(master, text="")
+        self.result_label.pack()
+
+        self.suggestion_label = tk.Label(master, text="")
+        self.suggestion_label.pack()
+
+        self.generate_button = tk.Button(master, text="Generate Strong Password",
+            command=self.generate_password)
+        self.generate_button.pack()
+
+        self.export_button = tk.Button(master, text="Export Results", command=self.export_results)
+        self.export_button.pack()
+
+        self.quit_button = tk.Button(master, text="Quit", command=master.quit)
+        self.quit_button.pack()
+
+        self.tip_label = tk.Label(master, text="\nTips:\n"
+            "\n• Do not include any personal information in your password"
+            "\n• Use a combination of uppercase and lowercase letters"
+            "\n• Include numbers and special characters"
+            "\n• Avoid common words or phrases"
+            "\n• Use a unique password for each account",
+            fg="light blue", justify="left")
+        self.tip_label.pack()
+
+        # Added text box to display generated password
+        self.password_display = tk.Text(master, height=2, width=30, wrap=tk.WORD)
+        self.password_display.pack()
+
+        # Added Copy to Clipboard Button
+        self.copy_button = tk.Button(master, text="Copy to Clipboard", command=self.copy_password)
+        self.copy_button.pack()
+
+        self.results = []
+
+    def check_password(self):
+        """Check the strength of the entered password."""
+        password = self.password_entry.get()
+        result = self.password_strength.check_password_strength(password)
+        self.result_label.config(text=f"{result.strength}: {result.message}")
+        suggestions = self.password_strength.suggest_improvements(password)
+        self.suggestion_label.config(text=suggestions)
+        self.results.append({"password": password, "strength": result.strength,
+        "message": result.message})
+        logging.info("Password checked: %s", result.strength)
+
+    def generate_password(self):
+        """Generate a random strong password."""
+        password = self.password_strength.generate_random_password()
+        self.password_entry.delete(0, tk.END)
+        self.password_entry.insert(0, password)
+        # Insert the generated password into the text box
+        self.password_display.delete(1.0, tk.END)
+        self.password_display.insert(tk.END, password)
+        copy_to_clipboard = messagebox.askyesno("Generated Password",
+            f"Generated password: {password}\n\nDo you want to copy the password to clipboard?")
+        if copy_to_clipboard:
+            self.master.clipboard_clear()
+            self.master.clipboard_append(password)
+            messagebox.showinfo("Clipboard", "Password copied to clipboard.")
+
+    def copy_password(self):
+        """Copy the password from the text box to clipboard."""
+        password = self.password_display.get(1.0, tk.END).strip()
+        self.master.clipboard_clear()
+        self.master.clipboard_append(password)
+        messagebox.showinfo("Clipboard", "Password copied to clipboard.")
+
+    def export_results(self):
+        """Export the password check results to a JSON file."""
+        if not self.results:
+            messagebox.showerror("Error", "No results to export.")
+            return
+        file_path = filedialog.asksaveasfilename(defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
+        if not file_path:
+            return
+        with open(file_path, 'w', encoding='utf-8') as file:
+            json.dump(self.results, file, indent=4)
+        messagebox.showinfo("Export Successful", f"Results exported to {file_path}.")
 
 
 
