@@ -146,6 +146,27 @@ class PasswordStrength:
 
         return "Suggested improvements:\n\n" + "\n".join(f"- {s}" for s in suggestions)
 
+class PasswordStrengthCLI:
+    """CLI interface for Password Strength Checker."""
+
+    def __init__(self):
+        self.password_strength = PasswordStrength()
+
+    def check_password(self, password):
+        """Check password strength and print results."""
+        result = self.password_strength.check_password_strength(password)
+        print(f"\nStrength: {result.strength}")
+        print(f"Message: {result.message}")
+        print(self.password_strength.suggest_improvements(password))
+
+    def generate_password(self, length=16):
+        """Generate and display a random password."""
+        password = self.password_strength.generate_random_password(length)
+        print(f"\nGenerated Password: {password}")
+        self.check_password(password)
+        return password
+
+
 # pylint: disable=R0902
 class PasswordStrengthGUI:
     """GUI class for Password Strength Checker."""
